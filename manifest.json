@@ -1,7 +1,7 @@
 {
   "name": "Control Evento",
   "short_name": "Evento",
-  "start_url": "control_evento_pro.html",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#111111",
   "theme_color": "#000000",
