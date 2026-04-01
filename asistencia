@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control Evento PRO</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#111;
+color:white;
+overflow:hidden;
+}
+
+.topbar{
+position:fixed;
+top:0;
+width:100%;
+background:#000;
+padding:10px;
+text-align:center;
+z-index:10;
+font-size:14px;
+}
+
+#mapa{
+position:absolute;
+top:60px;
+left:0;
+right:0;
+bottom:0;
+overflow:auto;
+touch-action:none;
+}
+
+.canvas{
+position:relative;
+width:1300px;
+height:950px;
+margin:auto;
+}
+
+.asiento{
+width:18px;
+height:18px;
+border-radius:4px;
+position:absolute;
+background:#2ecc71;
+}
+
+.ocupado{
+background:#e74c3c;
+}
+
+.label{
+position:absolute;
+background:#444;
+padding:3px 8px;
+border-radius:6px;
+font-size:12px;
+}
+
+.filaBtn{
+position:absolute;
+width:14px;
+height:14px;
+background:#888;
+border-radius:3px;
+cursor:pointer;
+}
+
+.botones{
+position:fixed;
+bottom:10px;
+left:50%;
+transform:translateX(-50%);
+display:flex;
+gap:10px;
+}
+
+button{
+padding:10px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="topbar" id="contador"></div>
+
+<div id="mapa">
+<div class="canvas" id="canvas"></div>
+</div>
+
+<div class="botones">
+<button onclick="llenar()">Llenar todo</button>
+<button onclick="vaciar()">Vaciar todo</button>
+</div>
+
+<script>
+
+const canvas = document.getElementById("canvas");
+
+let total = 0;
+
+function crearFila(x,y,cant,id){
+
+let fila = [];
+
+for(let i=0;i<cant;i++){
+
+let a = document.createElement("div");
+a.className="asiento";
+a.style.left=(x+i*22)+"px";
+a.style.top=y+"px";
+
+a.addEventListener("mousedown",startPaint);
+a.addEventListener("mouseover",paint);
+
+a.addEventListener("touchstart",startPaint);
+a.addEventListener("touchmove",touchPaint);
+
+a.addEventListener("click",toggle);
+
+canvas.appendChild(a);
+fila.push(a);
+total++;
+
+}
+
+// botón fila
+let btn = document.createElement("div");
+btn.className="filaBtn";
+btn.style.left=(x-20)+"px";
+btn.style.top=y+"px";
+
+btn.onclick=()=>{
+let ocupada = fila.every(s=>s.classList.contains("ocupado"));
+
+fila.forEach(s=>{
+if(ocupada) s.classList.remove("ocupado");
+else s.classList.add("ocupado");
+});
+
+calcular();
+};
+
+canvas.appendChild(btn);
+
+}
+
+// labels
+function label(text,x,y){
+let l=document.createElement("div");
+l.className="label";
+l.innerText=text;
+l.style.left=x+"px";
+l.style.top=y+"px";
+canvas.appendChild(l);
+}
+
+// ===== SALA =====
+
+// Plataforma
+label("PLATAFORMA",550,10);
+
+// CENTRAL
+for(let i=0;i<11;i++){
+crearFila(500,80+i*25,7,"c"+i);
+}
+crearFila(520,80+11*25,5);
+
+// DERECHA
+for(let i=0;i<8;i++){
+crearFila(750,80+i*25,3);
+}
+
+// audio/video separado (mejorado)
+label("AUDIO / VIDEO",734,80+8*28-28);
+
+// más separados y centrados
+crearFila(775,80+8*28,2, 28);
+
+// IZQUIERDA
+for(let i=0;i<9;i++){
+crearFila(300,80+i*25,3);
+}
+crearFila(300,80+9*25,2);
+crearFila(300,80+10*25,3);
+
+// SALA B
+label("SALA B",300,380);
+crearFila(300,420,3);
+for(let i=1;i<=3;i++){
+crearFila(300,420+i*25,4);
+}
+
+// ACOMODADOR
+label("ACOMODADOR ENTRADA",520,520);
+crearFila(560,550,1);
+
+// ===== INTERACCIÓN =====
+
+let painting=false;
+
+function startPaint(e){
+painting=true;
+}
+
+function paint(e){
+if(painting){
+e.target.classList.add("ocupado");
+calcular();
+}
+}
+
+function touchPaint(e){
+if(!painting) return;
+
+let t=e.touches[0];
+let el=document.elementFromPoint(t.clientX,t.clientY);
+
+if(el && el.classList.contains("asiento")){
+el.classList.add("ocupado");
+calcular();
+}
+}
+
+document.addEventListener("mouseup",()=>painting=false);
+document.addEventListener("touchend",()=>painting=false);
+
+function toggle(e){
+if(!painting){
+e.target.classList.toggle("ocupado");
+calcular();
+}
+}
+
+// ===== CONTADOR =====
+
+function calcular(){
+
+let ocupados=document.querySelectorAll(".ocupado").length;
+let libres=total-ocupados;
+
+document.getElementById("contador").innerText =
+"👥 Asistencia: "+ocupados+
+" | 🟢 Libres: "+libres+
+" | 🔢 Total: "+total;
+
+}
+
+// ===== BOTONES =====
+
+function llenar(){
+document.querySelectorAll(".asiento").forEach(a=>a.classList.add("ocupado"));
+calcular();
+}
+
+function vaciar(){
+document.querySelectorAll(".asiento").forEach(a=>a.classList.remove("ocupado"));
+calcular();
+}
+
+calcular();
+
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js');
+}
+</script>
+</body>
+</html>
+{
+  "name": "Control Evento",
+  "short_name": "Evento",
+  "start_url": "control_evento_pro.html",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open('evento-cache').then(cache => {
+      return cache.addAll([
+        'control_evento_pro.html'
+      ]);
+    })
+  );
+});
